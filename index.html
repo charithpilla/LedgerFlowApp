@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LedgerFlow Prototype</title>
+    <link rel="stylesheet" href="ledgerflow-prototype.CSS" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container topbar-inner">
+        <a class="brand" href="#">
+          <span class="brand-mark">L</span>
+          <span>LedgerFlow</span>
+        </a>
+        <nav class="nav">
+          <a class="active" href="#">Overview</a>
+          <a href="#forms-section">Forms</a>
+          <a href="#activity-section">Activity</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div class="hero-card">
+          <div>
+            <span class="eyebrow">⚡ AI-assisted invoice flow</span>
+            <h1>Move receipts, invoices, and approvals in one place.</h1>
+            <p>Capture documents, route approvals, and keep every expense audit-ready from a single modern workspace.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#forms-section">Submit a document</a>
+              <a class="btn btn-secondary" href="#activity-section">View activity</a>
+            </div>
+          </div>
+          <div class="hero-side">
+            <small>Live metrics</small>
+            <div class="hero-stat">
+              <div>
+                <strong>24</strong>
+                <span>Invoices captured</span>
+              </div>
+              <span class="trend-up">+12%</span>
+            </div>
+            <div class="hero-stat">
+              <div>
+                <strong>8</strong>
+                <span>Pending approvals</span>
+              </div>
+              <span>Today</span>
+            </div>
+            <div class="hero-stat">
+              <div>
+                <strong>96%</strong>
+                <span>On-time review rate</span>
+              </div>
+              <span>Stable</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-card">
+          <span class="label">Documents</span>
+          <div class="value" id="statDocuments">0</div>
+          <div class="meta">Captured this week</div>
+        </div>
+        <div class="stat-card">
+          <span class="label">Approvals</span>
+          <div class="value">3</div>
+          <div class="meta">Awaiting review</div>
+        </div>
+        <div class="stat-card">
+          <span class="label">Average</span>
+          <div class="value">$240</div>
+          <div class="meta">Per vendor invoice</div>
+        </div>
+        <div class="stat-card">
+          <span class="label">Status</span>
+          <div class="value">Healthy</div>
+          <div class="meta">All systems synced</div>
+        </div>
+      </section>
+
+      <section class="main-grid" id="forms-section">
+        <div class="section-card">
+          <div class="section-head">
+            <div>
+              <h2>Register & login</h2>
+              <p>Secure the workspace and start processing documents in seconds.</p>
+            </div>
+            <span class="pill">Connected</span>
+          </div>
+          <div class="form-grid">
+            <form id="registerForm" class="stacked-form">
+              <h3>Register</h3>
+              <input id="registerName" placeholder="Name" required />
+              <input id="registerEmail" type="email" placeholder="Email" required />
+              <input id="registerPassword" type="password" placeholder="Password" required />
+              <button class="btn btn-primary" type="submit">Register</button>
+            </form>
+            <form id="loginForm" class="stacked-form">
+              <h3>Login</h3>
+              <input id="loginEmail" type="email" placeholder="Email" required />
+              <input id="loginPassword" type="password" placeholder="Password" required />
+              <button class="btn btn-secondary" type="submit">Login</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="section-card" id="activity-section">
+          <div class="section-head">
+            <div>
+              <h2>Live status</h2>
+              <p>Your latest actions and document submissions.</p>
+            </div>
+            <span class="pill">Realtime</span>
+          </div>
+          <div id="statusBox" class="status-banner">Waiting for your first action.</div>
+          <ul id="documentList" class="docs-list"></ul>
+        </div>
+      </section>
+
+      <section class="lifecycle-wrap">
+        <div class="section-card">
+          <div class="section-head">
+            <div>
+              <h2>Submit a document</h2>
+              <p>Capture important vendor details and route them for review.</p>
+            </div>
+            <span class="pill">New</span>
+          </div>
+          <form id="documentForm" class="stacked-form">
+            <input id="docType" placeholder="Document Type" required />
+            <input id="docVendor" placeholder="Vendor" required />
+            <input id="docAmount" type="number" placeholder="Amount" required />
+            <input id="docCategory" placeholder="Category" required />
+            <button class="btn btn-primary" type="submit">Submit</button>
+          </form>
+        </div>
+
+        <div class="section-card">
+          <div class="section-head">
+            <div>
+              <h2>Why teams use LedgerFlow</h2>
+              <p>Built for modern finance and operations teams.</p>
+            </div>
+          </div>
+          <div class="lifecycle-list">
+            <div class="lifecycle-item">
+              <div class="left"><span class="step-dot"></span>Instant capture</div>
+              <span class="count">01</span>
+            </div>
+            <div class="lifecycle-item">
+              <div class="left"><span class="step-dot"></span>Approval routing</div>
+              <span class="count">02</span>
+            </div>
+            <div class="lifecycle-item">
+              <div class="left"><span class="step-dot"></span>Audit-ready history</div>
+              <span class="count">03</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-card">
+        <span>LedgerFlow prototype • backend connected to local API</span>
+        <span>Supabase ready for production storage</span>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

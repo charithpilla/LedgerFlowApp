@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ledgerflow — Financial Workflow Automation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #16213E;
+    --ledger-green: #1F3D33;
+    --paper: #F3F1E9;
+    --paper-dim: #EAE7DB;
+    --stamp: #B23A2E;
+    --brass: #A9823E;
+    --slate: #5B6472;
+    --line: #D8D3C3;
+    --white: #FFFFFF;
+    --good: #2C6E49;
+    --font-display: 'Spectral', Georgia, serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font-body); -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1100px; margin:0 auto; padding:28px 24px 80px;}
+
+  /* Header */
+  .brand-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:42px; height:42px; border-radius:6px; background:var(--ledger-green);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .brand-mark svg{width:22px; height:22px;}
+  .brand-name{font-family:var(--font-display); font-size:24px; font-weight:700; letter-spacing:0.2px;}
+  .brand-tag{font-size:12.5px; color:var(--slate); margin-top:1px;}
+  .env-pill{
+    font-family:var(--font-mono); font-size:11px; color:var(--slate);
+    border:1px solid var(--line); padding:5px 10px; border-radius:20px; background:var(--white);
+  }
+
+  /* Nav */
+  .tabs{display:flex; gap:4px; border-bottom:2px solid var(--line); margin-bottom:26px; overflow-x:auto;}
+  .tab{
+    font-family:var(--font-body); font-weight:600; font-size:14px; color:var(--slate);
+    padding:11px 16px; cursor:pointer; border:none; background:none; white-space:nowrap;
+    border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .15s;
+  }
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--ledger-green); border-bottom-color:var(--stamp);}
+
+  .panel{display:none; animation:fade .25s ease;}
+  .panel.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  h2.section-title{
+    font-family:var(--font-display); font-size:20px; font-weight:600; margin:0 0 4px;
+  }
+  .section-sub{color:var(--slate); font-size:13.5px; margin:0 0 20px;}
+
+  /* KPI cards */
+  .kpi-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px;}
+  .kpi{
+    background:var(--white); border:1px solid var(--line); border-radius:8px; padding:16px 18px;
+  }
+  .kpi-label{font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px; color:var(--slate); margin-bottom:8px;}
+  .kpi-value{font-family:var(--font-mono); font-size:26px; font-weight:600; color:var(--ink);}
+  .kpi-delta{font-size:12px; color:var(--good); margin-top:4px;}
+
+  /* Pipeline */
+  .pipeline-card{
+    background:var(--white); border:1px solid var(--line); border-radius:10px; padding:24px 20px 20px;
+    margin-bottom:28px;
+  }
+  .pipeline-title{font-family:var(--font-display); font-size:15px; font-weight:600; margin-bottom:18px;}
+  .pipeline{display:flex; align-items:center; justify-content:space-between; position:relative;}
+  .pstage{flex:1; text-align:center; position:relative; z-index:2;}
+  .pdot{
+    width:38px; height:38px; border-radius:50%; background:var(--paper-dim); border:2px solid var(--line);
+    margin:0 auto 10px; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:13px; color:var(--slate); transition:all .3s;
+  }
+  .pstage.done .pdot{background:var(--ledger-green); border-color:var(--ledger-green); color:var(--white);}
+  .pstage.current .pdot{background:var(--stamp); border-color:var(--stamp); color:var(--white); box-shadow:0 0 0 5px rgba(178,58,46,0.15);}
+  .pname{font-size:12px; font-weight:600; color:var(--ink);}
+  .pcount{font-family:var(--font-mono); font-size:11px; color:var(--slate); margin-top:2px;}
+  .pline{position:absolute; top:19px; left:5%; right:5%; height:2px; background:var(--line); z-index:1;}
+
+  /* Buttons */
+  .btn{
+    font-family:var(--font-body); font-weight:600; font-size:13.5px; cursor:pointer;
+    border-radius:6px; border:1px solid transparent; padding:9px 16px; transition:all .15s;
+  }
+  .btn-primary{background:var(--ledger-green); color:var(--white);}
+  .btn-primary:hover{background:#16302A;}
+  .btn-stamp{background:var(--stamp); color:var(--white);}
+  .btn-stamp:hover{background:#992F25;}
+  .btn-ghost{background:var(--white); color:var(--ink); border-color:var(--line);}
+  .btn-ghost:hover{border-color:var(--slate);}
+  .btn:disabled{opacity:0.4; cursor:not-allowed;}
+
+  /* Form */
+  .form-card{background:var(--white); border:1px solid var(--line); border-radius:10px; padding:24px; max-width:560px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--slate); margin-bottom:6px;}
+  .field select, .field input{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:6px;
+    font-family:var(--font-body); font-size:14px; background:var(--paper); color:var(--ink);
+  }
+  .field select:focus, .field input:focus{outline:none; border-color:var(--ledger-green);}
+  .upload-box{
+    border:1.5px dashed var(--line); border-radius:8px; padding:20px; text-align:center;
+    color:var(--slate); font-size:13px; cursor:pointer; background:var(--paper);
+  }
+  .upload-box:hover{border-color:var(--brass);}
+  .upload-box.filled{border-style:solid; border-color:var(--ledger-green); color:var(--ink);}
+
+  .extract-status{
+    display:none; align-items:center; gap:10px; font-size:13px; color:var(--ledger-green);
+    font-family:var(--font-mono); margin-top:14px; padding:10px 12px; background:#EEF3EE; border-radius:6px;
+  }
+  .spinner{
+    width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--ledger-green);
+    border-radius:50%; animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* Table / list */
+  .doc-list{display:flex; flex-direction:column; gap:10px;}
+  .doc-row{
+    background:var(--white); border:1px solid var(--line); border-radius:8px; padding:14px 16px;
+    display:flex; align-items:center; gap:14px; cursor:pointer; transition:border-color .15s;
+  }
+  .doc-row:hover{border-color:var(--brass);}
+  .doc-icon{
+    width:34px; height:34px; border-radius:6px; background:var(--paper-dim); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+  }
+  .doc-main{flex:1; min-width:0;}
+  .doc-vendor{font-weight:600; font-size:14px;}
+  .doc-meta{font-size:12px; color:var(--slate); margin-top:2px;}
+  .doc-amount{font-family:var(--font-mono); font-weight:600; font-size:15px; white-space:nowrap;}
+  .pill{
+    font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; white-space:nowrap;
+    font-family:var(--font-body);
+  }
+  .pill-pending{background:#FBF0DE; color:#8A5A15;}
+  .pill-review{background:#FDEBEA; color:var(--stamp);}
+  .pill-approved{background:#E4F0E7; color:var(--good);}
+  .pill-paid{background:#E4EAF2; color:var(--ink);} 
+
+  /* Detail drawer */
+  .overlay{
+    display:none; position:fixed; inset:0; background:rgba(22,33,62,0.35); z-index:10;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .overlay.open{display:flex;}
+  .drawer{
+    background:var(--paper); border-radius:12px; max-width:480px; width:100%; padding:26px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.25);
+  }
+  .drawer-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;}
+  .drawer-title{font-family:var(--font-display); font-size:19px; font-weight:600;}
+  .close-x{cursor:pointer; color:var(--slate); font-size:20px; line-height:1; background:none; border:none;}
+  .extract-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0;}
+  .extract-item{background:var(--white); border:1px solid var(--line); border-radius:6px; padding:10px 12px;}
+  .extract-item .l{font-size:10.5px; text-transform:uppercase; color:var(--slate); letter-spacing:0.4px;}
+  .extract-item .v{font-family:var(--font-mono); font-size:13.5px; margin-top:3px;}
+  .drawer-actions{display:flex; gap:10px; margin-top:18px;}
+  .route-note{font-size:12.5px; color:var(--slate); margin-top:14px; padding-top:14px; border-top:1px solid var(--line);}
+
+  /* Audit trail */
+  .audit-item{display:flex; gap:14px; padding:12px 0; border-bottom:1px solid var(--line);}
+  .audit-item:last-child{border-bottom:none;}
+  .audit-dot{width:8px; height:8px; border-radius:50%; background:var(--brass); margin-top:6px; flex-shrink:0;}
+  .audit-text{font-size:13.5px;}
+  .audit-time{font-family:var(--font-mono); font-size:11px; color:var(--slate); margin-top:2px;}
+
+  /* Insights */
+  .insight-grid{display:grid; grid-template-columns:1.3fr 1fr; gap:20px;}
+  .chart-card{background:var(--white); border:1px solid var(--line); border-radius:10px; padding:20px;}
+  .chart-title{font-family:var(--font-display); font-size:14.5px; font-weight:600; margin-bottom:16px;}
+  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .bar-label{width:110px; font-size:12px; color:var(--slate); flex-shrink:0;}
+  .bar-track{flex:1; background:var(--paper-dim); border-radius:4px; height:16px; overflow:hidden;}
+  .bar-fill{height:100%; background:var(--ledger-green); border-radius:4px;}
+  .bar-val{width:70px; text-align:right; font-family:var(--font-mono); font-size:12px; flex-shrink:0;}
+  .compare-stat{text-align:center; padding:18px 0;}
+  .compare-num{font-family:var(--font-mono); font-size:34px; font-weight:600;}
+  .compare-label{font-size:12px; color:var(--slate); margin-top:4px;}
+  .vs-divider{text-align:center; color:var(--line); font-size:11px; margin:4px 0; letter-spacing:2px;}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--white); padding:12px 20px; border-radius:8px;
+    font-size:13.5px; opacity:0; pointer-events:none; transition:all .3s; z-index:50; max-width:90%;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:720px){
+    .kpi-grid{grid-template-columns:1fr 1fr;}
+    .insight-grid{grid-template-columns:1fr;}
+    .pname, .pcount{display:none;}
+    .extract-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="brand-row">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#F3F1E9" stroke-width="1.8"><path d="M4 4h16v16H4z" stroke-opacity="0"/><path d="M6 3v18M6 7h11a2 2 0 0 1 0 4H8a2 2 0 0 0 0 4h9"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">Ledgerflow</div>
+        <div class="brand-tag">From receipt to reconciled — automatically</div>
+      </div>
+    </div>
+    <div class="env-pill">● prototype demo</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="intake">Submit Document</button>
+    <button class="tab" data-tab="approvals">Approvals</button>
+    <button class="tab" data-tab="audit">Audit Trail</button>
+    <button class="tab" data-tab="insights">Insights</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="panel-overview">
+    <h2 class="section-title">Today at a glance</h2>
+    <p class="section-sub">Every invoice, receipt, and reimbursement your business touches — captured, routed, and reconciled without a spreadsheet.</p>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">Pending Review</div><div class="kpi-value" id="kpi-pending">–</div><div class="kpi-delta">Needs your approval</div></div>
+      <div class="kpi"><div class="kpi-label">Auto-Processed Today</div><div class="kpi-value" id="kpi-processed">12</div><div class="kpi-delta">↑ from 7 yesterday</div></div>
+      <div class="kpi"><div class="kpi-label">Avg. Processing Time</div><div class="kpi-value">4 min</div><div class="kpi-delta">vs 45 min manual</div></div>
+      <div class="kpi"><div class="kpi-label">Reconciled This Month</div><div class="kpi-value">₹1.86L</div><div class="kpi-delta">across 46 documents</div></div>
+    </div>
+
+    <div class="pipeline-card">
+      <div class="pipeline-title">Document lifecycle</div>
+      <div class="pipeline">
+        <div class="pline"></div>
+        <div class="pstage done"><div class="pdot">✓</div><div class="pname">Captured</div><div class="pcount" id="pc-captured">–</div></div>
+        <div class="pstage done"><div class="pdot">✓</div><div class="pname">Extracted</div><div class="pcount" id="pc-extracted">–</div></div>
+        <div class="pstage current"><div class="pdot">→</div><div class="pname">Routed for Approval</div><div class="pcount" id="pc-routed">–</div></div>
+        <div class="pstage"><div class="pdot">4</div><div class="pname">Approved</div><div class="pcount" id="pc-approved">–</div></div>
+        <div class="pstage"><div class="pdot">5</div><div class="pname">Reconciled &amp; Paid</div><div class="pcount" id="pc-paid">–</div></div>
+      </div>
+    </div>
+
+    <div class="doc-list" id="overview-recent"></div>
+  </div>
+
+  <!-- INTAKE -->
+  <div class="panel" id="panel-intake">
+    <h2 class="section-title">Submit a document</h2>
+    <p class="section-sub">Drop in an invoice, receipt, or reimbursement claim. Ledgerflow reads it, structures it, and routes it — no manual data entry.</p>
+
+    <div class="form-card">
+      <div class="field">
+        <label>Document type</label>
+        <select id="f-type">
+          <option>Vendor Invoice</option>
+          <option>Purchase Receipt</option>
+          <option>Employee Reimbursement</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Vendor / Payee</label>
+        <input id="f-vendor" type="text" placeholder="e.g. Sundaram Office Supplies">
+      </div>
+      <div class="field">
+        <label>Amount (₹)</label>
+        <input id="f-amount" type="number" placeholder="e.g. 12500">
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="f-category">
+          <option>Office Supplies</option>
+          <option>Travel</option>
+          <option>Utilities</option>
+          <option>Rent</option>
+          <option>Software &amp; Subscriptions</option>
+          <option>Client Entertainment</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Attachment</label>
+        <div class="upload-box" id="upload-box" onclick="fakeUpload()">📎 Click to attach invoice/receipt (PDF or photo)</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%; padding:11px;" onclick="submitDoc()">Submit for processing</button>
+      <div class="extract-status" id="extract-status"><div class="spinner"></div><span id="extract-text">Extracting line items…</span></div>
+    </div>
+  </div>
+
+  <!-- APPROVALS -->
+  <div class="panel" id="panel-approvals">
+    <h2 class="section-title">Approval queue</h2>
+    <p class="section-sub">Everything routed here has already been read and structured — you're approving data, not typing it.</p>
+    <div class="doc-list" id="approval-list"></div>
+  </div>
+
+  <!-- AUDIT -->
+  <div class="panel" id="panel-audit">
+    <h2 class="section-title">Audit trail</h2>
+    <p class="section-sub">A timestamped, tamper-evident log of every action — built for compliance review, not reconstructed after the fact.</p>
+    <div class="form-card" style="max-width:100%;" id="audit-list"></div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="panel" id="panel-insights">
+    <h2 class="section-title">Revenue &amp; expense intelligence</h2>
+    <p class="section-sub">The visibility owners usually wait until month-end for — available the moment a document is processed.</p>
+    <div class="insight-grid">
+      <div class="chart-card">
+        <div class="chart-title">Spend by category (this month)</div>
+        <div id="category-chart"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Processing time: manual vs. automated</div>
+        <div class="compare-stat"><div class="compare-num" style="color:var(--stamp)">45 min</div><div class="compare-label">Manual entry &amp; filing, per document</div></div>
+        <div class="vs-divider">— VS —</div>
+        <div class="compare-stat"><div class="compare-num" style="color:var(--good)">4 min</div><div class="compare-label">Ledgerflow, capture to routing</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Detail overlay -->
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer-content"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let seq = 100;
+const now = () => new Date();
+const fmtTime = (d) => d.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+const fmtMoney = (n) => '₹' + n.toLocaleString('en-IN');
+const API_BASE_URL = 'http://localhost:3000/api/documents';
+
+const seedDocs = [
+  {id: seq++, type:'Vendor Invoice', vendor:'Sri Krishna Traders', amount:24500, category:'Office Supplies', status:'paid', stage:5, history:[
+    {t:'Captured via email attachment', at:'09:12'}, {t:'Data extracted — 6 line items', at:'09:12'},
+    {t:'Routed to Manager for approval', at:'09:13'}, {t:'Approved by A. Rao', at:'10:04'}, {t:'Marked paid — UTR ref 7734', at:'14:20'}
+  ]},
+  {id: seq++, type:'Employee Reimbursement', vendor:'P. Mehta — Travel claim', amount:8200, category:'Travel', status:'approved', stage:4, history:[
+    {t:'Submitted via mobile app', at:'08:40'}, {t:'Data extracted — 3 receipts bundled', at:'08:41'},
+    {t:'Routed to Manager for approval', at:'08:41'}, {t:'Approved by A. Rao', at:'11:15'}
+  ]},
+  {id: seq++, type:'Vendor Invoice', vendor:'Bluewave Internet Services', amount:5600, category:'Utilities', status:'review', stage:3, history:[
+    {t:'Captured via portal upload', at:'10:02'}, {t:'Data extracted — recurring vendor matched', at:'10:03'},
+    {t:'Routed to Manager for approval', at:'10:03'}
+  ]},
+  {id: seq++, type:'Purchase Receipt', vendor:'Cloudserv Hosting', amount:3100, category:'Software & Subscriptions', status:'review', stage:3, history:[
+    {t:'Captured via email attachment', at:'11:47'}, {t:'Data extracted — subscription renewal detected', at:'11:48'},
+    {t:'Routed to Manager for approval', at:'11:48'}
+  ]},
+];
+
+let docs = seedDocs.map((doc) => ({...doc}));
+
+function normalizeDoc(doc) {
+  return {
+    id: doc.id || doc._id || `doc-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    type: doc.type || 'Vendor Invoice',
+    vendor: doc.vendor || 'Unnamed Vendor',
+    amount: Number(doc.amount || 0),
+    category: doc.category || 'General',
+    status: doc.status || 'review',
+    stage: doc.stage || 3,
+    history: Array.isArray(doc.history) ? doc.history : [],
+  };
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+name));
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(()=>el.classList.remove('show'), 3200);
+}
+
+function fakeUpload(){
+  const box = document.getElementById('upload-box');
+  box.textContent = '📄 receipt_scan_' + Math.floor(Math.random()*9000+1000) + '.jpg attached';
+  box.classList.add('filled');
+}
+
+async function loadDocuments(){
+  try {
+    const response = await fetch(API_BASE_URL);
+    if (!response.ok) throw new Error('Unable to load documents');
+    const data = await response.json();
+    docs = Array.isArray(data) ? data.map(normalizeDoc) : seedDocs.map((doc) => ({...doc}));
+  } catch (error) {
+    docs = seedDocs.map((doc) => ({...doc}));
+  }
+  renderAll();
+}
+
+async function submitDoc(){
+  const type = document.getElementById('f-type').value;
+  const vendor = document.getElementById('f-vendor').value.trim() || 'Unnamed Vendor';
+  const amount = parseFloat(document.getElementById('f-amount').value) || 0;
+  const category = document.getElementById('f-category').value;
+
+  if(amount <= 0){
+    showToast('Add an amount before submitting.');
+    return;
+  }
+
+  const statusEl = document.getElementById('extract-status');
+  const textEl = document.getElementById('extract-text');
+  statusEl.style.display = 'flex';
+  textEl.textContent = 'Reading document…';
+
+  setTimeout(()=>{ textEl.textContent = 'Extracting vendor, amount, and category…'; }, 700);
+  setTimeout(()=>{ textEl.textContent = 'Matching against ledger &amp; routing…'; }, 1500);
+
+  try {
+    const response = await fetch(API_BASE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type,
+        vendor,
+        amount,
+        category,
+        status: 'review',
+        stage: 3,
+        history: [
+          {t:'Captured via portal upload', at:fmtTime(now())},
+          {t:'Data extracted — 1 line item', at:fmtTime(now())},
+          {t:'Routed to Manager for approval', at:fmtTime(now())}
+        ]
+      })
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Submission failed');
+
+    docs = [normalizeDoc(result.document), ...docs];
+    statusEl.style.display = 'none';
+    document.getElementById('f-vendor').value='';
+    document.getElementById('f-amount').value='';
+    document.getElementById('upload-box').textContent = '📎 Click to attach invoice/receipt (PDF or photo)';
+    document.getElementById('upload-box').classList.remove('filled');
+    renderAll();
+    showToast('Captured, extracted, and routed to Manager for approval.');
+    switchTab('approvals');
+  } catch (error) {
+    statusEl.style.display = 'none';
+    showToast(error.message || 'Submission failed');
+  }
+}
+
+async function updateDoc(id, updates, successMessage){
+  try {
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Update failed');
+
+    const updated = normalizeDoc(result.document);
+    docs = docs.map((doc) => String(doc.id) === String(updated.id) ? updated : doc);
+    renderAll();
+    closeDrawer();
+    showToast(successMessage);
+  } catch (error) {
+    showToast(error.message || 'Update failed');
+  }
+}
+
+function iconFor(type){
+  if(type==='Employee Reimbursement') return '🧾';
+  if(type==='Purchase Receipt') return '🧻';
+  return '📄';
+}
+function pillFor(status){
+  const map = {pending:['pill-pending','Pending'], review:['pill-review','Needs Approval'], approved:['pill-approved','Approved'], paid:['pill-paid','Paid']};
+  const [cls,label] = map[status];
+  return `<span class="pill ${cls}">${label}</span>`;
+}
+
+function renderOverview(){
+  const counts = {captured:docs.length, extracted:docs.length, routed:docs.filter(d=>d.status==='review').length, approved:docs.filter(d=>d.status==='approved').length, paid:docs.filter(d=>d.status==='paid').length};
+  document.getElementById('kpi-pending').textContent = counts.routed;
+  document.getElementById('pc-captured').textContent = counts.captured;
+  document.getElementById('pc-extracted').textContent = counts.extracted;
+  document.getElementById('pc-routed').textContent = counts.routed;
+  document.getElementById('pc-approved').textContent = counts.approved;
+  document.getElementById('pc-paid').textContent = counts.paid;
+
+  const recent = docs.slice(0,4);
+  document.getElementById('overview-recent').innerHTML = recent.map(d=>`
+    <div class="doc-row" onclick="openDrawer('${String(d.id).replace(/'/g, "\\'")}')">
+      <div class="doc-icon">${iconFor(d.type)}</div>
+      <div class="doc-main">
+        <div class="doc-vendor">${d.vendor}</div>
+        <div class="doc-meta">${d.type} · ${d.category}</div>
+      </div>
+      ${pillFor(d.status)}
+      <div class="doc-amount">${fmtMoney(d.amount)}</div>
+    </div>
+  `).join('');
+}
+
+function renderApprovals(){
+  const queue = docs.filter(d=>d.status==='review' || d.status==='approved');
+  document.getElementById('approval-list').innerHTML = queue.length ? queue.map(d=>`
+    <div class="doc-row" onclick="openDrawer('${String(d.id).replace(/'/g, "\\'")}')">
+      <div class="doc-icon">${iconFor(d.type)}</div>
+      <div class="doc-main">
+        <div class="doc-vendor">${d.vendor}</div>
+        <div class="doc-meta">${d.type} · ${d.category}</div>
+      </div>
+      ${pillFor(d.status)}
+      <div class="doc-amount">${fmtMoney(d.amount)}</div>
+    </div>
+  `).join('') : '<p style="color:var(--slate); font-size:13.5px;">Queue is clear — nothing waiting on you right now.</p>';
+}
+
+function renderAudit(){
+  const all = docs.flatMap(d => (d.history || []).map(h => ({...h, vendor:d.vendor})));
+  document.getElementById('audit-list').innerHTML = all.map(h=>`
+    <div class="audit-item">
+      <div class="audit-dot"></div>
+      <div>
+        <div class="audit-text">${h.t} — <strong>${h.vendor}</strong></div>
+        <div class="audit-time">${h.at}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderInsights(){
+  const chartData = docs.reduce((acc, doc) => {
+    if (!doc.category) return acc;
+    acc[doc.category] = (acc[doc.category] || 0) + Number(doc.amount || 0);
+    return acc;
+  }, {});
+  const data = Object.keys(chartData).length ? chartData : {'Office Supplies':24500,'Travel':8200,'Utilities':5600,'Software & Subscriptions':3100,'Rent':42000,'Client Entertainment':2900};
+  const max = Math.max(...Object.values(data));
+  document.getElementById('category-chart').innerHTML = Object.entries(data).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`
+    <div class="bar-row">
+      <div class="bar-label">${cat}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(val/max*100).toFixed(0)}%"></div></div>
+      <div class="bar-val">${fmtMoney(val)}</div>
+    </div>
+  `).join('');
+}
+
+function renderAll(){
+  renderOverview();
+  renderApprovals();
+  renderAudit();
+  renderInsights();
+}
+
+function escapeForAttr(value){
+  return String(value).replace(/['\\]/g, '\\$&');
+}
+
+function openDrawer(id){
+  const d = docs.find(x=>String(x.id)===String(id));
+  if(!d) return;
+  const overlay = document.getElementById('overlay');
+  const canAct = d.status==='review';
+  const canPay = d.status==='approved';
+  const safeId = escapeForAttr(d.id);
+  document.getElementById('drawer-content').innerHTML = `
+    <div class="drawer-head">
+      <div>
+        <div class="drawer-title">${d.vendor}</div>
+        <div style="font-size:12.5px; color:var(--slate); margin-top:2px;">${d.type}</div>
+      </div>
+      <button class="close-x" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="extract-grid">
+      <div class="extract-item"><div class="l">Amount</div><div class="v">${fmtMoney(d.amount)}</div></div>
+      <div class="extract-item"><div class="l">Category</div><div class="v">${d.category}</div></div>
+      <div class="extract-item"><div class="l">Status</div><div class="v">${pillFor(d.status)}</div></div>
+      <div class="extract-item"><div class="l">Extraction confidence</div><div class="v">97.4%</div></div>
+    </div>
+    <div class="drawer-actions">
+      ${canAct ? `<button class="btn btn-stamp" onclick="approveDoc('${safeId}')">Approve</button><button class="btn btn-ghost" onclick="rejectDoc('${safeId}')">Send back</button>` : ''}
+      ${canPay ? `<button class="btn btn-primary" onclick="payDoc('${safeId}')">Mark as paid</button>` : ''}
+      ${!canAct && !canPay ? `<span style="font-size:12.5px; color:var(--slate);">No further action needed.</span>` : ''}
+    </div>
+    <div class="route-note">Routing: Manager review → Finance reconciliation. Every step below is logged to the audit trail automatically.</div>
+  `;
+  overlay.classList.add('open');
+}
+function closeDrawer(){ document.getElementById('overlay').classList.remove('open'); }
+
+function approveDoc(id){
+  const d = docs.find(x=>String(x.id)===String(id));
+  if (!d) return;
+  updateDoc(id, {status:'approved', stage:4, history:[...(d.history || []), {t:'Approved by A. Rao', at:fmtTime(now())}]}, 'Approved — routed to Finance for reconciliation.');
+}
+function rejectDoc(id){
+  const d = docs.find(x=>String(x.id)===String(id));
+  if (!d) return;
+  updateDoc(id, {history:[...(d.history || []), {t:'Sent back for correction', at:fmtTime(now())}]}, 'Sent back to submitter with a note.');
+}
+function payDoc(id){
+  const d = docs.find(x=>String(x.id)===String(id));
+  if (!d) return;
+  updateDoc(id, {status:'paid', stage:5, history:[...(d.history || []), {t:'Marked paid — reconciled against bank statement', at:fmtTime(now())}]}, 'Reconciled and marked paid.');
+}
+
+document.getElementById('overlay').addEventListener('click', (e)=>{ if(e.target.id==='overlay') closeDrawer(); });
+
+loadDocuments();
+</script>
+</body>
+</html>
