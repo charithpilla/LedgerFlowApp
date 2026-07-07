@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login — Ledgerflow</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-gradient: radial-gradient(circle at top left, #1e293b, #020617 80%);
+    --surface: rgba(30, 41, 59, 0.45);
+    --border: rgba(255, 255, 255, 0.1);
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --text: #f8fafc;
+    --slate: #94a3b8;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --radius: 12px;
+    --font-display: 'Spectral', Georgia, serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    
+    /* Mapping old variables */
+    --ink: var(--text);
+    --ledger-green: var(--primary);
+    --paper: transparent;
+    --paper-dim: var(--surface);
+    --stamp: var(--warning);
+    --brass: var(--warning);
+    --line: var(--border);
+    --white: var(--surface);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg-gradient); color:var(--ink);
+    font-family:var(--font-body); -webkit-font-smoothing:antialiased;
+    display: flex; align-items: center; justify-content: center; height: 100vh;
+  }
+  .login-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:32px; width: 100%; max-width: 400px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  }
+  .brand{display:flex; align-items:center; gap:12px; justify-content: center; margin-bottom: 32px;}
+  .brand-mark{
+    width:42px; height:42px; border-radius:6px; background:var(--ledger-green);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .brand-mark svg{width:22px; height:22px;}
+  .brand-name{font-family:var(--font-display); font-size:24px; font-weight:700; letter-spacing:0.2px;}
+
+  .field{margin-bottom:18px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--slate); margin-bottom:6px;}
+  .field input{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:6px;
+    font-family:var(--font-body); font-size:14px; background:var(--paper); color:var(--ink);
+  }
+  .field input:focus{outline:none; border-color:var(--ledger-green);}
+  
+  .btn{
+    font-family:var(--font-body); font-weight:600; font-size:13.5px; cursor:pointer;
+    border-radius:6px; border:1px solid transparent; padding:11px; transition:all .2s ease; width: 100%;
+  }
+  .btn-primary{background:var(--primary); color:white; box-shadow: 0 0 10px rgba(59,130,246,0.3);}
+  .btn-primary:hover{background:var(--primary-hover); transform: translateY(-1px); box-shadow: 0 0 15px rgba(59,130,246,0.5);}
+
+  .switch-mode{
+    text-align: center; margin-top: 20px; font-size: 13px; color: var(--slate);
+  }
+  .switch-mode a{
+    color: var(--ledger-green); font-weight: 600; cursor: pointer; text-decoration: none;
+  }
+  
+  .error-msg{
+    color: var(--stamp); font-size: 12.5px; margin-bottom: 16px; text-align: center; display: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#F3F1E9" stroke-width="1.8"><path d="M4 4h16v16H4z" stroke-opacity="0"/><path d="M6 3v18M6 7h11a2 2 0 0 1 0 4H8a2 2 0 0 0 0 4h9"/></svg>
+    </div>
+    <div class="brand-name">Ledgerflow</div>
+  </div>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <form id="login-form">
+    <div class="field" id="name-field" style="display: none;">
+      <label>Full Name</label>
+      <input type="text" id="f-name" placeholder="Alex Rao">
+    </div>
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" id="f-email" placeholder="alex@company.com" required>
+    </div>
+    <div class="field">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <label id="pass-label" style="margin:0;">Password</label>
+        <a id="forgot-link" onclick="setMode('reset')" style="font-size:12.5px; color:var(--ledger-green); cursor:pointer; font-weight:500;">Forgot password?</a>
+      </div>
+      <input type="password" id="f-pass" placeholder="••••••••" required>
+    </div>
+    <button type="submit" class="btn btn-primary" id="submit-btn">Sign In</button>
+  </form>
+
+  <div class="switch-mode">
+    <span id="mode-text">Don't have an account?</span> <a onclick="toggleMode()" id="mode-link">Create one</a>
+  </div>
+</div>
+
+<script>
+  let mode = 'login';
+  
+  function setMode(newMode) {
+    mode = newMode;
+    document.getElementById('name-field').style.display = mode === 'register' ? 'block' : 'none';
+    document.getElementById('f-name').required = mode === 'register';
+    
+    if (mode === 'reset') {
+      document.getElementById('submit-btn').textContent = 'Reset Password';
+      document.getElementById('mode-text').textContent = 'Remembered your password?';
+      document.getElementById('mode-link').textContent = 'Sign in';
+      document.getElementById('pass-label').textContent = 'New Password';
+      document.getElementById('forgot-link').style.display = 'none';
+    } else if (mode === 'register') {
+      document.getElementById('submit-btn').textContent = 'Create Account';
+      document.getElementById('mode-text').textContent = 'Already have an account?';
+      document.getElementById('mode-link').textContent = 'Sign in';
+      document.getElementById('pass-label').textContent = 'Password';
+      document.getElementById('forgot-link').style.display = 'none';
+    } else {
+      document.getElementById('submit-btn').textContent = 'Sign In';
+      document.getElementById('mode-text').textContent = "Don't have an account?";
+      document.getElementById('mode-link').textContent = 'Create one';
+      document.getElementById('pass-label').textContent = 'Password';
+      document.getElementById('forgot-link').style.display = 'block';
+    }
+    document.getElementById('error-msg').style.display = 'none';
+  }
+
+  function toggleMode() {
+    setMode(mode === 'login' ? 'register' : 'login');
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const err = document.getElementById('error-msg');
+    
+    btn.textContent = 'Processing...';
+    btn.disabled = true;
+    err.style.display = 'none';
+
+    const email = document.getElementById('f-email').value;
+    const password = document.getElementById('f-pass').value;
+    const name = document.getElementById('f-name').value;
+
+    let endpoint, body;
+    if (mode === 'login') {
+      endpoint = '/api/auth/login';
+      body = { email, password };
+    } else if (mode === 'register') {
+      endpoint = '/api/auth/register';
+      body = { name, email, password };
+    } else if (mode === 'reset') {
+      endpoint = '/api/auth/reset-password';
+      body = { email, password };
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000' + endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.message || 'Something went wrong');
+
+      if (mode === 'login' && data.token) {
+        localStorage.setItem('lf_token', data.token);
+        localStorage.setItem('lf_user', JSON.stringify(data.user));
+        window.location.href = 'ledgerflow-prototype.html';
+      } else if (mode === 'reset') {
+        setMode('login');
+        err.textContent = 'Password reset successful! Please sign in with your new password.';
+        err.style.color = 'var(--ledger-green)';
+        err.style.display = 'block';
+      } else {
+        // Registered successfully
+        setMode('login');
+        err.textContent = 'Registration successful! Please sign in.';
+        err.style.color = 'var(--ledger-green)';
+        err.style.display = 'block';
+      }
+    } catch (error) {
+      err.textContent = error.message;
+      err.style.color = 'var(--stamp)';
+      err.style.display = 'block';
+    } finally {
+      if (mode === 'reset') btn.textContent = 'Reset Password';
+      else if (mode === 'register') btn.textContent = 'Create Account';
+      else btn.textContent = 'Sign In';
+      btn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

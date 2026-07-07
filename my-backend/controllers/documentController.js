@@ -57,7 +57,6 @@ exports.submitDocument = async (req, res) => {
       const { data, error } = await supabaseAdmin
         .from("documents")
         .insert({
-          id: payload.id,
           type: payload.type,
           vendor: payload.vendor,
           amount: payload.amount,
@@ -188,3 +187,110 @@ exports.updateDocument = async (req, res) => {
     });
   }
 };
+
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const fs = require("fs");
+
+exports.uploadDocument = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      // Fallback if no key is provided
+      return res.status(200).json({
+        success: true,
+        message: "File uploaded (AI disabled due to missing key)",
+        extractedData: {
+          vendor: "Manual Entry Required",
+          amount: 0,
+          category: "General",
+          type: "Vendor Invoice",
+        }
+      });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    function fileToGenerativePart(path, mimeType) {
+      return {
+        inlineData: {
+          data: Buffer.from(fs.readFileSync(path)).toString("base64"),
+          mimeType
+        },
+      };
+    }
+    
+    // Defaulting to image/jpeg for simplicity, but could be derived from req.file.mimetype
+    const mimeType = req.file.mimetype || "image/jpeg";
+    const imagePart = fileToGenerativePart(req.file.path, mimeType);
+
+    const prompt = `
+      Analyze this receipt/invoice. 
+      Extract the following information and output ONLY a raw JSON object (no markdown formatting, no backticks, no intro):
+      {
+        "vendor": "Name of the business or vendor",
+        "amount": Total amount as a number (e.g. 15.99),
+        "category": "One of: Office Supplies, Utilities, Software & Subscriptions, Hardware, Travel, General",
+        "type": "Vendor Invoice"
+      }
+    `;
+
+    const result = await model.generateContent([prompt, imagePart]);
+    const responseText = result.response.text().trim();
+    
+    // Clean up potential markdown blocks if the model ignored instructions
+    const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+    const extractedData = JSON.parse(jsonStr);
+
+    return res.status(200).json({
+      success: true,
+      message: "File uploaded and analyzed with AI successfully",
+      extractedData: {
+        vendor: extractedData.vendor || "Unknown Vendor",
+        amount: extractedData.amount || 0,
+        category: extractedData.category || "General",
+        type: extractedData.type || "Vendor Invoice",
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "AI analysis failed: " + error.message,
+    });
+  }
+};
+
+exports.getInsights = async (req, res) => {
+  try {
+    let allDocs = [];
+    if (!useFallback && supabaseAdmin) {
+      const { data, error } = await supabaseAdmin.from("documents").select("category, amount");
+      if (!error && data) {
+        allDocs = data;
+      }
+    } else {
+      allDocs = fallbackDocuments;
+    }
+
+    const chartData = allDocs.reduce((acc, doc) => {
+      if (!doc.category) return acc;
+      acc[doc.category] = (acc[doc.category] || 0) + Number(doc.amount || 0);
+      return acc;
+    }, {});
+
+    return res.status(200).json({
+      success: true,
+      data: Object.keys(chartData).length ? chartData : { 'No Data': 0 }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
